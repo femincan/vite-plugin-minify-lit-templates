@@ -1,0 +1,14 @@
+{
+	"name": "vite-plugin-minify-lit-templates",
+	"module": "index.ts",
+	"type": "module",
+	"scripts": {
+		"format": "bun format:plain .",
+		"format:plain": "biome format --write"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "2.1.4",
+		"@types/bun": "^1.2.19",
+		"lefthook": "^1.12.2"
+	}
+}

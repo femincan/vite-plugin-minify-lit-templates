@@ -1,0 +1,6 @@
+pre-commit:
+  jobs:
+    - name: format
+      run: |
+        bun format:plain {staged_files}
+        git add {staged_files}
