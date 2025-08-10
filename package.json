@@ -1,14 +1,43 @@
 {
 	"name": "vite-plugin-minify-lit-templates",
+	"version": "0.0.0",
+	"description": "📦 A Vite plugin to minify Lit HTML and CSS templates for smaller bundle size.",
+	"main": "dist/index.js",
+	"types": "dist/index.d.ts",
 	"module": "index.ts",
 	"type": "module",
+	"files": [
+		"dist"
+	],
 	"scripts": {
 		"format": "bun format:plain .",
 		"format:plain": "biome format --write"
 	},
+	"keywords": [
+		"vite",
+		"plugin",
+		"minify",
+		"lit",
+		"lit-html",
+		"templates",
+		"vite-plugin"
+	],
+	"author": "Furkan Emin Can",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/femincan/vite-plugin-minify-lit-templates.git"
+	},
+	"bugs": {
+		"url": "https://github.com/femincan/vite-plugin-minify-lit-templates/issues"
+	},
+	"homepage": "https://github.com/femincan/vite-plugin-minify-lit-templates#readme",
 	"devDependencies": {
 		"@biomejs/biome": "2.1.4",
 		"@types/bun": "^1.2.19",
 		"lefthook": "^1.12.2"
+	},
+	"engines": {
+		"node": ">=20"
 	}
 }
