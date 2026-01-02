@@ -1,0 +1,4 @@
+[install]
+
+minimumReleaseAge = 259200 # 3 days in seconds
+minimumReleaseAgeExcludes = ["@types/bun", "typescript"]
