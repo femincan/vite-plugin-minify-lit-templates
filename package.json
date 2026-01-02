@@ -20,7 +20,10 @@
 		"lit",
 		"lit-html",
 		"templates",
-		"vite-plugin"
+		"vite-plugin",
+		"html",
+		"css",
+		"web-components"
 	],
 	"author": "Furkan Emin Can",
 	"license": "MIT",
