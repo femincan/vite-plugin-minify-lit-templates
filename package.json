@@ -10,8 +10,8 @@
 		"dist"
 	],
 	"scripts": {
-		"format": "bun format:plain .",
-		"format:plain": "biome format --write"
+		"format": "biome format --write",
+		"lint": "biome lint . --write"
 	},
 	"keywords": [
 		"vite",
