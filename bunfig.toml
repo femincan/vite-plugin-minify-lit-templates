@@ -2,3 +2,6 @@
 
 minimumReleaseAge = 259200 # 3 days in seconds
 minimumReleaseAgeExcludes = ["@types/bun", "typescript"]
+
+[run]
+bun = true # Make Bun runtime default for running scripts

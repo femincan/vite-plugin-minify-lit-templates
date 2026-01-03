@@ -10,9 +10,11 @@
 		"dist"
 	],
 	"scripts": {
-		"build": "bun run --bun tsdown",
-		"format": "bun run --bun biome format --write",
-		"lint": "bun run --bun biome lint . --write"
+		"dev": "tsdown --watch",
+		"build": "tsdown",
+		"test": "bun test --concurrent",
+		"format": "biome format --write",
+		"lint": "biome lint . --write"
 	},
 	"keywords": [
 		"vite",
