@@ -1,7 +1,7 @@
 [install]
 
 minimumReleaseAge = 259200 # 3 days in seconds
-minimumReleaseAgeExcludes = ["@types/bun", "typescript"]
+minimumReleaseAgeExcludes = ["@types/bun", "typescript", "minify-html-css"]
 
 [run]
 bun = true # Make Bun runtime default for running scripts
