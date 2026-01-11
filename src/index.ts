@@ -1,5 +1,6 @@
 import { parse } from '@babel/parser';
 import _traverse from '@babel/traverse';
+import type { Expression } from '@babel/types';
 import MagicString from 'magic-string';
 import {
 	type MinifyCSSOptions,
@@ -13,24 +14,123 @@ import { mergeOptions } from './utils/lib';
 // @ts-expect-error Docs recommend doing in this way because of cjs and esm interop
 const traverse = _traverse.default as typeof _traverse;
 
-export type PluginOptions = {
+export type Options = Partial<{
 	include: string | string[];
 	exclude: string | string[];
-	options: {
+	minifierOptions: {
+		html: MinifyHTMLOptions;
+		css: MinifyCSSOptions;
+	};
+}>;
+
+type ResolvedOptions = {
+	include: string | string[];
+	exclude?: string | string[];
+	minifierOptions: {
 		html: MinifyHTMLOptions;
 		css: MinifyCSSOptions;
 	};
 };
 
-const defaultOptions: Partial<PluginOptions> = {
+type TemplateKind = 'html' | 'css';
+
+const defaultOptions: ResolvedOptions = {
 	include: '**/*.{js,ts,mjs,mts,jsx,tsx}',
+	minifierOptions: {
+		html: {},
+		css: {},
+	},
 };
 
-export default function minifyLitTemplates(
-	options?: Partial<PluginOptions>,
-): Plugin {
-	const mergedOptions = mergeOptions(defaultOptions, options || {});
-	const filter = createFilter(mergedOptions.include, mergedOptions.exclude);
+function resolveOptions(options?: Options): ResolvedOptions {
+	return mergeOptions(defaultOptions, options ?? {});
+}
+
+const templateKindMap: Record<string, TemplateKind> = {
+	html: 'html',
+	css: 'css',
+	unsafeHTML: 'html',
+	unsafeCSS: 'css',
+};
+
+function getTemplateKind(tag: Expression): TemplateKind | null {
+	if (tag.type === 'Identifier') {
+		return templateKindMap[tag.name] ?? null;
+	}
+
+	// Handle cases like `lit.html` or `lit.css`
+	if (
+		tag.type === 'MemberExpression' &&
+		tag.object.type === 'Identifier' &&
+		tag.object.name === 'lit' &&
+		tag.property.type === 'Identifier'
+	) {
+		return templateKindMap[tag.property.name] ?? null;
+	}
+
+	return null;
+}
+
+function createPlaceholder(index: number): string {
+	return `__LIT_EXPRESSION_${index}__`;
+}
+
+function createExpression(expression: unknown) {
+	// biome-ignore lint/style/useTemplate: Explicitly creating a template expression
+	return '${' + expression + '}';
+}
+
+function createTemplateLiteral(content: string): string {
+	// biome-ignore lint/style/useTemplate: Explicitly creating a template literal
+	return '`' + content + '`';
+}
+
+function buildTemplateWithPlaceholders(quasisRaw: string[]): string {
+	let template = '';
+	for (let i = 0; i < quasisRaw.length - 1; i++) {
+		template += quasisRaw[i] + createPlaceholder(i);
+	}
+	template += quasisRaw[quasisRaw.length - 1];
+	return template;
+}
+
+function restoreExpressions(
+	minifiedCode: string,
+	expressions: string[],
+): string {
+	let result = minifiedCode;
+	for (let i = 0; i < expressions.length; i++) {
+		result = result.replace(
+			createPlaceholder(i),
+			createExpression(expressions[i]),
+		);
+	}
+	return result;
+}
+
+function minifyTemplate(
+	kind: TemplateKind,
+	templateContent: string,
+	options: ResolvedOptions['minifierOptions'],
+): string | null {
+	if (kind === 'html') {
+		const result = minifyHTML(templateContent, options.html);
+		if (result.errors?.length) return null;
+		return result.code;
+	}
+
+	if (kind === 'css') {
+		const result = minifyCSS(templateContent, options.css);
+		if (result.warnings?.length) return null;
+		return result.code;
+	}
+
+	return null;
+}
+
+export default function minifyLitTemplates(options?: Partial<Options>): Plugin {
+	const resolvedOptions = resolveOptions(options);
+	const filter = createFilter(resolvedOptions.include, resolvedOptions.exclude);
 
 	return {
 		name: 'minify-lit-templates',
@@ -55,14 +155,15 @@ export default function minifyLitTemplates(
 
 			traverse(ast, {
 				TaggedTemplateExpression(p) {
-					if (p.node.tag.type !== 'Identifier') return;
+					const kind = getTemplateKind(p.node.tag);
+					if (kind === null) return;
 
 					const templateLiteral = p.node.quasi;
 					if (templateLiteral.start == null || templateLiteral.end == null)
 						return;
 
-					const quasis = templateLiteral.quasis.map((q) => q.value.raw);
-					const expressions = [];
+					const quasisRaw = templateLiteral.quasis.map((q) => q.value.raw);
+					const expressions: string[] = [];
 
 					for (const e of templateLiteral.expressions) {
 						if (e.start == null || e.end == null) return;
@@ -70,46 +171,22 @@ export default function minifyLitTemplates(
 						expressions.push(code.slice(e.start, e.end));
 					}
 
-					const expressionPlaceholderMap = new Map();
+					const templateWithPlaceholders =
+						buildTemplateWithPlaceholders(quasisRaw);
 
-					for (let i = 0; i < quasis.length - 1; i++) {
-						const placeholder = `__LIT_EXPRESSION_${i}__`;
-						expressionPlaceholderMap.set(placeholder, expressions[i]);
+					const minifiedCode = minifyTemplate(
+						kind,
+						templateWithPlaceholders,
+						resolvedOptions.minifierOptions,
+					);
+					if (minifiedCode === null) return;
 
-						quasis[i] += placeholder;
-					}
-
-					const joinedQuasis = quasis.join('');
-
-					const tagName = p.node.tag.name;
-					let minifyResult = null;
-
-					if (tagName === 'html') {
-						minifyResult = minifyHTML(joinedQuasis);
-
-						// FIXME: Return null on error for now
-						if (minifyResult.errors?.length) return;
-					}
-
-					if (tagName === 'css') {
-						minifyResult = minifyCSS(joinedQuasis);
-
-						// FIXME: Return null on warnings for now
-						if (minifyResult.warnings?.length) return;
-					}
-
-					if (minifyResult === null) return;
-
-					for (const placeholder of expressionPlaceholderMap.keys()) {
-						minifyResult.code = minifyResult.code
-							.split(placeholder)
-							.join(`\${${expressionPlaceholderMap.get(placeholder)}}`);
-					}
+					const restoredCode = restoreExpressions(minifiedCode, expressions);
 
 					ms.overwrite(
 						templateLiteral.start,
 						templateLiteral.end,
-						`\`${minifyResult.code}\``,
+						createTemplateLiteral(restoredCode),
 					);
 					minified = true;
 				},
