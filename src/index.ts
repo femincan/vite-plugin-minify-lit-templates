@@ -9,7 +9,7 @@ import {
 	minifyHTML,
 } from 'minify-html-css';
 import { createFilter, type Plugin } from 'vite';
-import { mergeOptions } from './utils/lib';
+import { mergeOptions } from './utils';
 
 // @ts-expect-error Typescript definitions are missing
 const traverse = _traverse.default as typeof _traverse;
