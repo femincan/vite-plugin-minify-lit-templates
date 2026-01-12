@@ -90,7 +90,7 @@ function buildTemplateWithPlaceholders(quasisRaw: string[]): string {
 	for (let i = 0; i < quasisRaw.length - 1; i++) {
 		template += quasisRaw[i] + createPlaceholder(i);
 	}
-	template += quasisRaw[quasisRaw.length - 1];
+	template += quasisRaw.at(-1);
 	return template;
 }
 
