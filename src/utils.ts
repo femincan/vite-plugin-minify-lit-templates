@@ -1,4 +1,5 @@
-// biome-ignore-all lint/suspicious/noExplicitAny: the mergeOptions function is very dynamic and we should use any
+// biome-ignore lint/suspicious/noExplicitAny: Using any for generic object type
+type OptionsObj = Record<PropertyKey, any>;
 
 /**
  * Deeply merges two option objects, copying all enumerable properties from the source object into the target object.
@@ -16,8 +17,8 @@
  * A new object representing a deep merge of `targetOptions` and `sourceOptions`.
  */
 export function mergeOptions<
-	TargetOptions extends Record<PropertyKey, any>,
-	SourceOptions extends Record<PropertyKey, any>,
+	TargetOptions extends OptionsObj,
+	SourceOptions extends OptionsObj,
 >(
 	targetOptions: TargetOptions,
 	sourceOptions: SourceOptions,
