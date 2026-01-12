@@ -46,7 +46,7 @@ export function mergeOptions<
 	return mergedOptions;
 }
 
-function isPlainObject(value: unknown): boolean {
+export function isPlainObject(value: unknown): boolean {
 	// Check if the value is not an object
 	if (typeof value !== 'object' || value === null) return false;
 
