@@ -11,7 +11,7 @@ import {
 import { createFilter, type Plugin } from 'vite';
 import { mergeOptions } from './utils/lib';
 
-// @ts-expect-error Docs recommend doing in this way because of cjs and esm interop
+// @ts-expect-error Typescript definitions are missing
 const traverse = _traverse.default as typeof _traverse;
 
 export type Options = Partial<{
